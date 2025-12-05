@@ -20,3 +20,10 @@ export interface RevenueDataPoint {
   orders: number;  // 400
   [key: string]: any;
 }
+
+export interface DashboardStats {
+  totalProducts: number;
+  totalSales: number;
+  pendingOrders: number;
+  confirmedOrders: number;
+}

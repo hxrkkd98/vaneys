@@ -7,15 +7,16 @@ import { Card } from "@heroui/react";
 import TopSellerChart from "@/components/admin/ui/TopSellerChart";
 import RevenueChart from "@/components/admin/ui/RevenueChart"; 
 import StatCard from "@/components/admin/ui/StatCard";
-import { ChartDataPoint, RevenueDataPoint } from "@/types/dashboard";
+import { ChartDataPoint, RevenueDataPoint, DashboardStats } from "@/types/dashboard";
 
 // Define what data this component expects to receive from the server
 interface DashboardSectionProps {
   topSellerData: ChartDataPoint[];
   revenueData: RevenueDataPoint[]; 
+  stats: DashboardStats;
 }
 
-export default function DashboardSection({ topSellerData, revenueData }: DashboardSectionProps) {
+export default function DashboardSection({ topSellerData, revenueData, stats}: DashboardSectionProps) {
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
@@ -58,8 +59,8 @@ export default function DashboardSection({ topSellerData, revenueData }: Dashboa
       {/* Charts Grid */}
       <div className="grid grid-cols-6 gap-4">
         <div className="col-span-4">
-          <Card className="rounded-lg">
-            <Card.Content>
+          <Card className="rounded-lg min-h-[556px]">
+            <Card.Content className="flex flex-col justify-between">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className="bg-emerald-50 rounded-md p-2 h-fit">
@@ -107,7 +108,7 @@ export default function DashboardSection({ topSellerData, revenueData }: Dashboa
                       </Select.Popover>
                     </Select>
                 </div>
-                <div className="revenueBox h-[350px] w-full">
+                <div className="revenueBox w-full mb-4 pr-4">
                     <RevenueChart data={revenueData} />
                 </div>
             </Card.Content>
