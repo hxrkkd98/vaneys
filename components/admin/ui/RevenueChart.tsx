@@ -39,7 +39,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
         {/* Orders Value */}
         <div>
             <p className="text-slate-500 text-xs font-medium">Orders</p>
-            <p className="text-amber-500 text-lg font-bold">
+            <p className="text-indigo-500 text-lg font-bold">
             {orderItem?.value?.toLocaleString()}
             </p>
         </div>
@@ -60,7 +60,7 @@ interface RevenueChartProps {
 
 export default function RevenueChart({ data }: RevenueChartProps) {
   return (
-    <div className="w-full h-full">
+  
       <ResponsiveContainer height={400} width="100%">
         <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
           <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
@@ -87,7 +87,7 @@ export default function RevenueChart({ data }: RevenueChartProps) {
           <Line
             type="monotone"
             dataKey="orders"
-            stroke="#FDBA74" 
+            stroke="#615fff" 
             strokeWidth={3}
             strokeDasharray="4 4" 
             dot={false}
@@ -99,14 +99,14 @@ export default function RevenueChart({ data }: RevenueChartProps) {
           <Line
             type="monotone"
             dataKey="revenue"
-            stroke="#F97316" 
+            stroke="#615fff" 
             strokeWidth={3}
             dot={false}
-            activeDot={{ r: 6, fill: "#fff", stroke: "#F97316", strokeWidth: 3 }} 
+            activeDot={{ r: 6, fill: "#fff", stroke: "#615fff", strokeWidth: 3 }} 
           />
           
         </LineChart>
       </ResponsiveContainer>
-    </div>
+
   );
 }

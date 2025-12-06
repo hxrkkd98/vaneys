@@ -22,7 +22,7 @@ export default function TopSellerChart({ data }: TopSellerChartProps) {
       {/* Chart Section */}
       <div className="w-full relative flex justify-center items-center">
  
-          <PieChart width={300} height={300}>
+          <PieChart width={250} height={250}>
             <Pie
               data={data}
               cx="50%"
@@ -58,7 +58,7 @@ export default function TopSellerChart({ data }: TopSellerChartProps) {
       </div>
 
       {/* Legend Section */}
-      <div className="w-full space-y-3 px-4">
+      <div className="w-full space-y-3 px-4 mt-5">
         {data.map((item, index) => (
           <div key={index} className="flex items-center justify-between">
             <div className="flex items-center gap-2">

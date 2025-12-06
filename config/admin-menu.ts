@@ -30,7 +30,6 @@ import {
       children: [
         { title: "All Products", path: "/admin/products" },
         { title: "Add New", path: "/admin/products/add" },
-        { title: "Categories", path: "/admin/products/categories" },
       ],
     },
     {
