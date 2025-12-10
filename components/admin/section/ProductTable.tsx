@@ -6,7 +6,10 @@ import useSWR from "swr";
 import { TableColumn } from "react-data-table-component";
 import { Edit, Trash2, Eye, Search, Filter } from "lucide-react";
 import { Product } from "@/types/product";
-import AppTable from "@/components/admin/ui/AppTable"; // <--- Import your new wrapper
+import AppTable from "@/components/admin/ui/AppTable"; 
+import {Modal, useOverlayState} from "@heroui/react";
+import { supabase } from "@/lib/supabaseClient"; // 1. Import Supabase
+import Link from "next/link";
 
 // --- Helpers ---
 const fetcher = (url: string) => fetch(url).then((res) => {
@@ -36,12 +39,65 @@ export default function ProductTable() {
   const [category, setCategory] = useState("all");
   const debouncedSearch = useDebounce(search, 500);
 
-  // 1. Data Fetching (Kept in Parent)
-  const { data, isLoading } = useSWR<{ data: Product[], total: number }>(
+  // 2. Add Lightbox State
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState("");
+  const [selectedProductName, setSelectedProductName] = useState("");
+
+  const handleModal = (image: string, name:string) => () => {
+    setIsOpen(true);
+    setSelectedImage(image); 
+    setSelectedProductName(name); 
+  }
+
+  // 1. Data Fetching (Get mutate from SWR)
+  const { data, isLoading, mutate } = useSWR<{ data: Product[], total: number }>(
     `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api'}/products?page=${page}&limit=${perPage}&search=${debouncedSearch}&category=${category}`,
     fetcher,
     { keepPreviousData: true }
   );
+
+  // 3. Handle Delete Function
+  // --- DELETE FUNCTION WITH IMAGE REMOVAL ---
+  const handleDelete = async (id: string | number, imageUrl: string) => {
+    if (window.confirm("Are you sure you want to delete this product? This action cannot be undone.")) {
+      try {
+        // 1. Remove Image from Storage (if it exists)
+        if (imageUrl) {
+          // Extract the file path from the full public URL
+          // Example URL: .../storage/v1/object/public/product-images/1765162.png
+          // We need: 1765162.png
+          const filePath = imageUrl.split('product-images/').pop();
+
+          if (filePath) {
+            const { error: storageError } = await supabase.storage
+              .from('product-images')
+              .remove([filePath]);
+
+            if (storageError) {
+              console.warn("Could not delete image file:", storageError.message);
+              // We usually continue to delete the record even if image delete fails
+            }
+          }
+        }
+
+        // 2. Delete Record from Database
+        const { error } = await supabase
+          .from('products')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+
+        mutate(); // Refresh table
+        alert("Product deleted successfully.");
+        
+      } catch (error: any) {
+        console.error("Delete Error:", error);
+        alert("Failed to delete product: " + error.message);
+      }
+    }
+  };
 
   // 2. Handlers (Kept in Parent)
   const handlePageChange = (page: number) => setPage(page);
@@ -56,7 +112,7 @@ export default function ProductTable() {
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setCategory(e.target.value);
-    setPage(1); // Reset to page 1 when filtering
+    setPage(1); 
   };
 
   // 3. Columns (Specific to Products)
@@ -66,8 +122,8 @@ export default function ProductTable() {
       selector: (row) => row.name,
       sortable: true,
       cell: (row) => (
-        <div className="flex items-center gap-3 py-2">
-          <div className="h-10 w-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden">
+        <div className="flex items-center gap-3 py-2" onClick={handleModal(row.image, row.name)} style={{cursor: 'pointer'}}>
+          <div className="h-10 w-10 rounded-lg bg-gray-100 border border-gray-200 overflow-hidden" >
             <img src={row.image} alt={row.name} className="h-full w-full object-cover"/>
           </div>
           <div className="flex flex-col">
@@ -87,7 +143,7 @@ export default function ProductTable() {
       selector: (row) => row.price,
       sortable: true,
       cell: (row) => (
-        <span className="font-semibold text-slate-700 text-sm">${row.price.toLocaleString()}</span>
+        <span className="font-semibold text-slate-700 text-sm">RM{Number(row.price).toFixed(2)}</span>
       ),
     },
     {
@@ -104,9 +160,20 @@ export default function ProductTable() {
       name: "Actions",
       cell: (row) => (
         <div className="flex gap-1">
-          <button className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"><Eye size={16} /></button>
-          <button className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"><Edit size={16} /></button>
-          <button className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 size={16} /></button>
+          <Link 
+            href={`/admin/products/edit/${row.id}`}
+            className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors"
+          >
+            <Edit size={16} />
+          </Link>
+          
+          {/* Update: Pass row.image to handleDelete */}
+          <button 
+            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+            onClick={() => handleDelete(row.id, row.image)} 
+          >
+            <Trash2 size={16} />
+          </button>
         </div>
       ),
       width: "140px",
@@ -155,6 +222,34 @@ export default function ProductTable() {
         onPageChange={handlePageChange}
         onPerRowsChange={handlePerRowsChange}
       />
+
+       <Modal>
+        <Modal.Container isOpen={isOpen} onOpenChange={setIsOpen}>
+          <Modal.Dialog className="sm:max-w-[1400px]">
+            {({close}) => (
+              <>
+                <Modal.CloseTrigger />
+                <Modal.Header>
+                  <Modal.Heading className="text-slate-700">{selectedProductName}</Modal.Heading>
+                </Modal.Header>
+                <Modal.Body>
+                  {selectedImage ? (
+                  <img 
+                    src={selectedImage} 
+                    alt={selectedProductName} 
+                    className="max-h-[60vh] w-auto object-contain rounded-lg shadow-sm"
+                  />
+                ) : (
+                  <div className="h-64 w-full flex items-center justify-center bg-gray-50 text-gray-400 rounded-lg">
+                    No Image Available
+                  </div>
+                )}
+                </Modal.Body>
+              </>
+            )}
+          </Modal.Dialog>
+        </Modal.Container>
+      </Modal>
     </div>
   );
 }
