@@ -135,7 +135,7 @@ export const Navbar = () => {
                      setUser(null);
                      await logout(); // Calls the Server Action
                    }} 
-                   className="text-gray-500 hover:text-red-600 flex items-center gap-2"
+                   className="text-base font-medium text-gray-800 flex items-center gap-2"
                  >
                    Logout <LogOut size={16} />
                  </button>
@@ -144,10 +144,10 @@ export const Navbar = () => {
                 <Link href="/login" onClick={() => setIsOpen(false)} className={isActive('/login')}>Login</Link>
              )}
 
-             <div className="pt-8 border-t border-gray-100 w-full">
+            {/*  <div className="pt-8 border-t border-gray-100 w-full">
                 <p className="text-xs text-gray-400 mb-2">Need Help?</p>
                 <p className="text-[#8B1E1E] font-bold">012-718 8122</p>
-             </div>
+             </div> */}
            </div>
         </div>
       )}
