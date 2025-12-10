@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { supabase } from "@/lib/supabaseClient"; // Ensure this path matches your setup
+import { createClient } from "@/lib/supabaseServer";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
+  const supabase = await createClient();
   
   // 1. Extract params
   const page = parseInt(searchParams.get("page") || "1");

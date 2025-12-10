@@ -63,7 +63,7 @@ export default function ProfilePage() {
                             <label className="text-xs font-bold uppercase text-gray-500">Phone Number</label>
                             <input type="tel" defaultValue="+60 12 345 6789" className="w-full border border-gray-200 p-3 focus:outline-none focus:border-[#8B1E1E]" />
                         </div>
-                        <button className="bg-[#8B1E1E] text-white px-8 py-3 font-bold uppercase tracking-widest hover:bg-[#6b1616] transition-colors">
+                        <button className="bg-[#8B1E1E] mt-4 text-white px-8 py-3 text-[16px] font-bold uppercase tracking-widest hover:bg-[#6b1616] transition-colors">
                             Save Changes
                         </button>
                     </form>

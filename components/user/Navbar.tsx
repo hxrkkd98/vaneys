@@ -1,24 +1,48 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { ShoppingBag, Menu, X, User } from 'lucide-react';
-import  Link  from 'next/link';
+import { ShoppingBag, Menu, X, User as UserIcon, LogOut } from 'lucide-react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { createClient } from '@/lib/supabaseClient'; // Uses the BROWSER client
+import { User } from '@supabase/supabase-js';
+import { logout } from '@/lib/auth/action';
+import { useUserStore } from '@/stores/useUserStore';
+
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [scrolled, setScrolled] = useState<boolean>(false);
+ 
+  const pathname = usePathname();
+  const isActive = (path: string) => pathname === path ? "text-[#8B1E1E]" : "hover:text-[#8B1E1E]";
 
+  // Fetch User Data on Mount
+  const { user, setUser } = useUserStore();
+
+  // Keep the listener to sync updates (Login/Logout)
+  useEffect(() => {
+    const supabase = createClient();    
+    // Listen for changes (Login, Logout, Auto-refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      // Update the global store whenever Supabase detects a change
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, [setUser]);
+
+ /*  useEffect(() => {
+    console.log("Current User State:", user);
+  }, [user]);
+ */
+  // Scroll effect
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // 2. Get the current path
-  const pathname = usePathname();
-
-  // 3. Helper to determine active class
-  const isActive = (path: string) => pathname === path ? "text-[#8B1E1E]" : "hover:text-[#8B1E1E]";
+  
 
   return (
     <nav className={`sticky top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 backdrop-blur-md shadow-lg py-2' : 'bg-white py-4'}`}>
@@ -31,6 +55,8 @@ export const Navbar = () => {
                {isOpen ? <X /> : <Menu />}
              </button>
           </div>
+
+     
             
           {/* Logo */}
           <Link href="/" className="flex flex-col items-center group cursor-pointer md:items-start shrink-0">
@@ -38,12 +64,22 @@ export const Navbar = () => {
               <span className="text-[8px] md:text-[9px] tracking-[0.3em] text-gray-500 uppercase font-medium group-hover:text-[#8B1E1E] transition-colors">Online Store</span>
           </Link>
 
-          {/* Center Navigation - ABSOLUTE POSITIONED */}
+          {/* Desktop Navigation */}
           <div className="hidden md:flex absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2">
              <div className="flex space-x-8 text-xs font-bold text-gray-600 uppercase tracking-widest">
                 <Link href="/" className={`${isActive('/')} transition-colors`}>Home</Link>
                 <Link href="/shop" className={`${isActive('/shop')} transition-colors`}>Products</Link>
-                {/* <Link href="/about" className={`${isActive('/about')} transition-colors`}>About</Link> */}
+                {user && (
+                  <button 
+                    onClick={async () => {
+                      setUser(null); // <--- 1. Clear the UI state immediately
+                      await logout(); // <--- 2. Then call the server action
+                    }}
+                    className="hover:text-[#8B1E1E] transition-colors text-left cusror-pointer"
+                  >
+                    LOGOUT
+                  </button>
+                )}
              </div>
           </div>
 
@@ -57,9 +93,25 @@ export const Navbar = () => {
                   </span>
                 </Link>
              </div>
-             <Link href="/login" className="hidden md:flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors text-gray-800 hover:text-[#8B1E1E]">
-                <User size={20} strokeWidth={2} />
-             </Link>
+
+             {/* 2. Desktop Login/Profile Logic */}
+             {user ? (
+               <Link 
+                 href="/profile" 
+                 className={`hidden md:flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors text-gray-800 hover:text-[#8B1E1E] ${isActive('/profile')}`}
+                 title="My Profile"
+               >
+                  <UserIcon size={20} strokeWidth={2} />
+               </Link>
+             ) : (
+               <Link 
+                 href="/login" 
+                 className="hidden md:flex items-center justify-center w-9 h-9 rounded-full hover:bg-gray-100 transition-colors text-gray-800 hover:text-[#8B1E1E]"
+                 title="Login"
+               >
+                  <UserIcon size={20} strokeWidth={2} />
+               </Link>
+             )}
           </div>
         </div>
       </div>
@@ -68,9 +120,30 @@ export const Navbar = () => {
       {isOpen && (
         <div className="md:hidden bg-white border-t border-gray-200 py-6 px-6 shadow-xl absolute w-full left-0 top-full animate-in slide-in-from-top-2 duration-200 h-screen">
            <div className="flex flex-col space-y-6 text-base font-medium text-gray-800 items-center text-center">
-            <Link href="/" onClick={() => setIsOpen(false)} className={isActive('/')}>Home</Link>
+             <Link href="/" onClick={() => setIsOpen(false)} className={isActive('/')}>Home</Link>
              <Link href="/shop" onClick={() => setIsOpen(false)} className={isActive('/shop')}>Products</Link>
-             {/* <Link href="/about" onClick={() => setIsOpen(false)} className={isActive('/about')}>About</Link> */}
+             
+             {/* 3. Mobile Login/Profile Logic */}
+             {user ? (
+              <>
+                 <Link href="/profile" onClick={() => setIsOpen(false)} className={isActive('/profile')}>Profile</Link>
+                 
+                 {/* 4. The Logout Button */}
+                 <button 
+                   onClick={async () => {
+                     setIsOpen(false);
+                     setUser(null);
+                     await logout(); // Calls the Server Action
+                   }} 
+                   className="text-gray-500 hover:text-red-600 flex items-center gap-2"
+                 >
+                   Logout <LogOut size={16} />
+                 </button>
+              </>
+             ) : (
+                <Link href="/login" onClick={() => setIsOpen(false)} className={isActive('/login')}>Login</Link>
+             )}
+
              <div className="pt-8 border-t border-gray-100 w-full">
                 <p className="text-xs text-gray-400 mb-2">Need Help?</p>
                 <p className="text-[#8B1E1E] font-bold">012-718 8122</p>
